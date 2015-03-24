@@ -1,0 +1,24 @@
+# Sample Play application reporting to graphite
+
+Simple java [Play](https://www.playframework.com/) application which reports to [graphite](http://graphite.wikidot.com/)
+for monitoring, setup to be hosted on [heroku](heroku.com) with [free addon](https://addons.heroku.com/hostedgraphite).
+
+To run:
+
+```
+./go
+```
+
+Runs at http://localhost:9090/hello
+
+## Heroku
+
+Requires Heroku toolkit installed.
+
+```
+heroku login
+heroku create -n
+# will give name/url of instance e.g. thawing-taiga-5494, put name in build.sbt herokuAppName setting
+./activator stage deployHeroku
+# after deploy your application will be available at the url given to the instance e.g. https://thawing-taiga-5494.herokuapp.com/
+```
