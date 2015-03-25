@@ -6,10 +6,12 @@ import com.codahale.metrics.graphite.GraphiteReporter;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
+import com.codahale.metrics.logback.InstrumentedAppender;
 import filters.MetricsFilter;
 import play.Application;
 import play.Configuration;
 import play.GlobalSettings;
+import play.Logger;
 import play.api.mvc.EssentialFilter;
 
 import java.net.InetSocketAddress;
@@ -29,7 +31,7 @@ public class Global extends GlobalSettings {
     public void onStart(Application application) {
         super.onStart(application);
 
-        setupJvmMetrics(application.configuration());
+        setupMetrics(application.configuration());
 
         setupGraphiteReporter(application.configuration());
     }
@@ -43,13 +45,23 @@ public class Global extends GlobalSettings {
         super.onStop(application);
     }
 
-    private void setupJvmMetrics(Configuration configuration) {
-        boolean metricsJvm = configuration.getBoolean("metrics.jvm");
+    private void setupMetrics(Configuration configuration) {
+        boolean metricsJvm     = configuration.getBoolean("metrics.jvm");
+        boolean metricsLogback = configuration.getBoolean("metrics.logback");
 
         if (metricsJvm) {
             metricRegistry.registerAll(new GarbageCollectorMetricSet());
             metricRegistry.registerAll(new MemoryUsageGaugeSet());
             metricRegistry.registerAll(new ThreadStatesGaugeSet());
+        }
+
+        if (metricsLogback) {
+            InstrumentedAppender appender = new InstrumentedAppender(metricRegistry);
+
+            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)Logger.underlying();
+            appender.setContext(logger.getLoggerContext());
+            appender.start();
+            logger.addAppender(appender);
         }
     }
 
