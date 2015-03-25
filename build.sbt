@@ -12,5 +12,7 @@ libraryDependencies ++= Seq(
   javaJdbc,
   javaEbean,
   cache,
-  javaWs
+  javaWs,
+  "com.kenshoo" %% "metrics-play" % "2.3.0_0.1.8",
+  "io.dropwizard.metrics" % "metrics-graphite" % "3.1.0"
 )
