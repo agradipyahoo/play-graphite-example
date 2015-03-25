@@ -1,5 +1,8 @@
 package filters;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.SharedMetricRegistries;
 import play.api.libs.iteratee.Execution;
 import play.api.libs.iteratee.Iteratee;
 import play.api.mvc.EssentialAction;
@@ -9,7 +12,13 @@ import play.api.mvc.Result;
 import scala.Function1;
 import scala.runtime.AbstractFunction1;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 public class MetricsFilter implements EssentialFilter {
+
+    private final MetricRegistry metricRegistry = SharedMetricRegistries.getOrCreate("play-metrics");
+
+    private final Counter counter = metricRegistry.counter(name("Requests"));
 
     public EssentialAction apply(final EssentialAction next) {
 
@@ -27,6 +36,7 @@ public class MetricsFilter implements EssentialFilter {
 
                     @Override
                     public Result apply(Result result) {
+                        counter.inc();
                         return result;
                     }
 

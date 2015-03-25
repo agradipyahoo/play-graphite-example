@@ -13,5 +13,7 @@ libraryDependencies ++= Seq(
   javaEbean,
   cache,
   javaWs,
+  "io.dropwizard.metrics" % "metrics-core" % "3.1.0",
+  "io.dropwizard.metrics" % "metrics-jvm" % "3.1.0",
   "io.dropwizard.metrics" % "metrics-graphite" % "3.1.0"
 )

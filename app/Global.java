@@ -1,9 +1,14 @@
 import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
+import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
+import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
+import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import filters.MetricsFilter;
 import play.Application;
+import play.Configuration;
 import play.GlobalSettings;
 import play.api.mvc.EssentialFilter;
 
@@ -12,7 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 public class Global extends GlobalSettings {
 
-    GraphiteReporter reporter;
+    MetricRegistry   metricRegistry = SharedMetricRegistries.getOrCreate("play-metrics");
+    GraphiteReporter graphiteReporter;
 
     @Override
     public <T extends EssentialFilter> Class<T>[] filters() {
@@ -23,19 +29,42 @@ public class Global extends GlobalSettings {
     public void onStart(Application application) {
         super.onStart(application);
 
-        // Add Graphite Reporter
-        boolean graphiteEnabled = application.configuration().getBoolean("graphite.enabled");
+        setupJvmMetrics(application.configuration());
+
+        setupGraphiteReporter(application.configuration());
+    }
+
+    @Override
+    public void onStop(Application application) {
+        if (graphiteReporter != null) {
+            graphiteReporter.stop();
+        }
+
+        super.onStop(application);
+    }
+
+    private void setupJvmMetrics(Configuration configuration) {
+        boolean metricsJvm = configuration.getBoolean("metrics.jvm");
+
+        if (metricsJvm) {
+            metricRegistry.registerAll(new GarbageCollectorMetricSet());
+            metricRegistry.registerAll(new MemoryUsageGaugeSet());
+            metricRegistry.registerAll(new ThreadStatesGaugeSet());
+        }
+    }
+
+    private void setupGraphiteReporter(Configuration configuration) {
+        boolean graphiteEnabled = configuration.getBoolean("graphite.enabled");
 
         if (graphiteEnabled) {
-            String   metricsName = application.configuration().getString("metrics.name");
-            String   host        = application.configuration().getString("graphite.host");
-            int      port        = application.configuration().getInt("graphite.port");
-            String   prefix      = application.configuration().getString("graphite.prefix");
-            long     period      = application.configuration().getLong("graphite.period");
-            TimeUnit periodUnit  = TimeUnit.valueOf(application.configuration().getString("graphite.periodUnit"));
+            String   host        = configuration.getString("graphite.host");
+            int      port        = configuration.getInt("graphite.port");
+            String   prefix      = configuration.getString("graphite.prefix");
+            long     period      = configuration.getLong("graphite.period");
+            TimeUnit periodUnit  = TimeUnit.valueOf(configuration.getString("graphite.periodUnit"));
 
             final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
-            GraphiteReporter.Builder reportBuilder = GraphiteReporter.forRegistry(SharedMetricRegistries.getOrCreate(metricsName))
+            GraphiteReporter.Builder reportBuilder = GraphiteReporter.forRegistry(metricRegistry)
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL);
@@ -44,18 +73,9 @@ public class Global extends GlobalSettings {
                 reportBuilder.prefixedWith(prefix);
             }
 
-            reporter = reportBuilder.build(graphite);
+            graphiteReporter = reportBuilder.build(graphite);
 
-            reporter.start(period, periodUnit);
+            graphiteReporter.start(period, periodUnit);
         }
-    }
-
-    @Override
-    public void onStop(Application application) {
-        if (reporter != null) {
-            reporter.stop();
-        }
-
-        super.onStop(application);
     }
 }
