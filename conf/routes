@@ -5,6 +5,3 @@
 GET     /               @controllers.Application.index()
 GET     /hello/:name    @controllers.Application.hello(name: String)
 GET     /return400      @controllers.Application.return400()
-
-# Metrics
-GET     /admin/metrics  com.kenshoo.play.metrics.MetricsController.metrics

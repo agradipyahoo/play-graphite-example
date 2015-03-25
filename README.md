@@ -1,9 +1,12 @@
-# Sample Play application reporting to graphite
+# Play application reporting to graphite
 
-Simple java [Play](https://www.playframework.com/) application which reports to [graphite](http://graphite.wikidot.com/)
+Example Java [Play](https://www.playframework.com/) application which reports to [graphite](http://graphite.wikidot.com/)
 for monitoring, setup to be hosted on [heroku](heroku.com) with [free addon](https://addons.heroku.com/hostedgraphite).
+This allows you to quickly test out using graphite and see what you get from monitoring with proper metrics.
 
-Using [metrics-play](https://github.com/kenshoo/metrics-play) play plugin to create the metrics registry.
+Based the implementation from the [metrics-play](https://github.com/kenshoo/metrics-play) play plugin, which is written in Scala.
+I wanted a clear Java Play implementation which gave me control over the metrics names, but if you want to quickly add
+metrics into your Play application without fuss this is a good plugin.
 
 To run:
 
@@ -11,7 +14,7 @@ To run:
 ./go
 ```
 
-Runs at http://localhost:9090/
+Runs at `http://localhost:9090/`, with three endpoints; [/](http://localhost:9090/), [/hello/name](http://localhost:9090/hello/name),[/return400](http://localhost:9090/return400).
 
 ## Heroku
 

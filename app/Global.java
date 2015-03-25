@@ -2,7 +2,7 @@ import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import com.kenshoo.play.metrics.JavaMetricsFilter;
+import filters.MetricsFilter;
 import play.Application;
 import play.GlobalSettings;
 import play.api.mvc.EssentialFilter;
@@ -14,11 +14,9 @@ public class Global extends GlobalSettings {
 
     GraphiteReporter reporter;
 
-    // Attaches Metrics filter to report on endpoint usage
     @Override
     public <T extends EssentialFilter> Class<T>[] filters() {
-
-        return new Class[]{JavaMetricsFilter.class};
+        return new Class[]{MetricsFilter.class};
     }
 
     @Override
