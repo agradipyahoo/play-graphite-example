@@ -46,8 +46,8 @@ public class Global extends GlobalSettings {
     }
 
     private void setupMetrics(Configuration configuration) {
-        boolean metricsJvm     = configuration.getBoolean("metrics.jvm");
-        boolean metricsLogback = configuration.getBoolean("metrics.logback");
+        boolean metricsJvm     = configuration.getBoolean("metrics.jvm", false);
+        boolean metricsLogback = configuration.getBoolean("metrics.logback", false);
 
         if (metricsJvm) {
             metricRegistry.registerAll(new GarbageCollectorMetricSet());
@@ -66,14 +66,14 @@ public class Global extends GlobalSettings {
     }
 
     private void setupGraphiteReporter(Configuration configuration) {
-        boolean graphiteEnabled = configuration.getBoolean("graphite.enabled");
+        boolean graphiteEnabled = configuration.getBoolean("graphite.enabled", false);
 
         if (graphiteEnabled) {
-            String   host        = configuration.getString("graphite.host");
-            int      port        = configuration.getInt("graphite.port");
-            String   prefix      = configuration.getString("graphite.prefix");
-            long     period      = configuration.getLong("graphite.period");
-            TimeUnit periodUnit  = TimeUnit.valueOf(configuration.getString("graphite.periodUnit"));
+            String   host        = configuration.getString("graphite.host", "localhost");
+            int      port        = configuration.getInt("graphite.port", 80);
+            String   prefix      = configuration.getString("graphite.prefix", "");
+            long     period      = configuration.getLong("graphite.period", 1l);
+            TimeUnit periodUnit  = TimeUnit.valueOf(configuration.getString("graphite.periodUnit", "MINUTES"));
 
             final Graphite graphite = new Graphite(new InetSocketAddress(host, port));
             GraphiteReporter.Builder reportBuilder = GraphiteReporter.forRegistry(metricRegistry)
