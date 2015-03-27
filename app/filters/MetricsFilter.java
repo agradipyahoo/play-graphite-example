@@ -1,8 +1,7 @@
 package filters;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer.Context;
 import play.api.libs.iteratee.Execution;
 import play.api.libs.iteratee.Iteratee;
 import play.api.mvc.EssentialAction;
@@ -12,13 +11,25 @@ import play.api.mvc.Result;
 import scala.Function1;
 import scala.runtime.AbstractFunction1;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class MetricsFilter implements EssentialFilter {
 
     private final MetricRegistry metricRegistry = SharedMetricRegistries.getOrCreate("play-metrics");
 
-    private final Counter counter = metricRegistry.counter(name("Requests"));
+    private final Counter activeRequests = metricRegistry.counter(name("activeRequests"));
+    private final Timer   requestTimer   = metricRegistry.timer(name("requestsTimer"));
+
+    private final Map<String, Meter> statusMeters = new HashMap<String, Meter>() {{
+        put("1", metricRegistry.meter(name("1xx-responses")));
+        put("2", metricRegistry.meter(name("2xx-responses")));
+        put("3", metricRegistry.meter(name("3xx-responses")));
+        put("4", metricRegistry.meter(name("4xx-responses")));
+        put("5", metricRegistry.meter(name("5xx-responses")));
+    }};
 
     public EssentialAction apply(final EssentialAction next) {
 
@@ -30,13 +41,20 @@ public class MetricsFilter implements EssentialFilter {
             }
 
             @Override
-            public Iteratee<byte[], Result> apply(final RequestHeader rh) {
+            public Iteratee<byte[], Result> apply(final RequestHeader requestHeader) {
+                activeRequests.inc();
+                final Context requestTimerContext = requestTimer.time();
 
-                return next.apply(rh).map(new AbstractFunction1<Result, Result>() {
+                return next.apply(requestHeader).map(new AbstractFunction1<Result, Result>() {
 
                     @Override
                     public Result apply(Result result) {
-                        counter.inc();
+                        activeRequests.dec();
+                        requestTimerContext.stop();
+                        String statusFirstCharacter = String.valueOf(result.header().status()).substring(0,1);
+                        if (statusMeters.containsKey(statusFirstCharacter)) {
+                            statusMeters.get(statusFirstCharacter).mark();
+                        }
                         return result;
                     }
 

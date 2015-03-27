@@ -1,3 +1,4 @@
+import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
@@ -48,6 +49,7 @@ public class Global extends GlobalSettings {
     private void setupMetrics(Configuration configuration) {
         boolean metricsJvm     = configuration.getBoolean("metrics.jvm", false);
         boolean metricsLogback = configuration.getBoolean("metrics.logback", false);
+        boolean metricsConsole = configuration.getBoolean("metrics.console", false);
 
         if (metricsJvm) {
             metricRegistry.registerAll(new GarbageCollectorMetricSet());
@@ -62,6 +64,14 @@ public class Global extends GlobalSettings {
             appender.setContext(logger.getLoggerContext());
             appender.start();
             logger.addAppender(appender);
+        }
+
+        if (metricsConsole) {
+            ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(metricRegistry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build();
+            consoleReporter.start(1, TimeUnit.SECONDS);
         }
     }
 
